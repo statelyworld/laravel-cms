@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 
 use App\Post;
 
+use App\Http\Requests\Posts\CreatePostsRequest; 
+
 class PostsController extends Controller
 {
     /**
@@ -15,7 +17,7 @@ class PostsController extends Controller
      */
     public function index()
     {
-        return view('posts.index');
+        return view('posts.index')->with('posts', Post::all());;
     }
 
     /**
@@ -34,12 +36,14 @@ class PostsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(CreatePostsRequest $request)
     {
         // upload the image to storage
         $image = $request->image->store('posts');
 
-         // create the post
+        //dd($image);
+
+        // create the post
          Post::create([
             'title' => $request->title,
             'description' => $request->description,
@@ -93,9 +97,34 @@ class PostsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Post $post)
     {
-        //
+        $post->delete();
+        $post = Post::withTrashed()->where('id', $id)->firstOrFail();
+        session()->flash('success', 'Post trashed successfully.');
+
+        if ($post->trashed()) {
+            $post->forceDelete();
+          } else {
+            $post->delete();
+          }
+
+          session()->flash('success', 'Post deleted successfully.');
+
+        return redirect(route('posts.index'));
     }
+
+
+  /**
+     * Display a list of all trashed posts
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function trashed()
+    {
+      $trashed = Post::withTrashed()->get();
+      return view('posts.index')->with('posts', $trashed);
+    }
+
 }
 //https://github.com/bahdcasts/
