@@ -8,6 +8,8 @@ use App\Post;
 
 use App\Http\Requests\Posts\CreatePostsRequest; 
 
+use Illuminate\Support\Facades\Storage;
+
 class PostsController extends Controller
 {
     /**
@@ -48,7 +50,8 @@ class PostsController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'content' => $request->content,
-            'image' => $image
+            'image' => $image,
+          'published_at' => $request->published_at
           ]);
 
            // flash message
@@ -97,13 +100,14 @@ class PostsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Post $post)
+    public function destroy($id)
     {
-        $post->delete();
+        //$post->delete();
         $post = Post::withTrashed()->where('id', $id)->firstOrFail();
         session()->flash('success', 'Post trashed successfully.');
 
         if ($post->trashed()) {
+            Storage::delete($post->image);
             $post->forceDelete();
           } else {
             $post->delete();
